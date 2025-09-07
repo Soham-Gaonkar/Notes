@@ -37,16 +37,34 @@ connectDB().then(()=> {
 
 
 // Gemini API proxy route
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import fetch from "node-fetch";
 
 app.post("/api/gemini", async (req, res) => {
     try {
         const { prompt } = req.body;
         const apiKey = process.env.GEMINI_API_KEY;
-        const genAI = new GoogleGenerativeAI({ apiKey });
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-        const result = await model.generateContent(prompt);
-        res.json({ text: result.response.text() });
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        const body = {
+            contents: [
+                { role: "user", parts: [{ text: prompt }] }
+            ]
+        };
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        });
+        const data = await response.json();
+        console.log("Gemini API response:", data);
+        const newText =
+          data.candidates?.[0]?.content?.parts?.[0]?.text ||
+          data.candidates?.[0]?.content?.text ||
+          selectedText;
+        if (!newText) {
+            res.status(500).json({ error: "Gemini did not return any output. Try a different prompt." });
+            return;
+        }
+        res.json(data);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
