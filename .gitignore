@@ -52,8 +52,6 @@ backend/.env
 # Jupyter
 .ipynb_checkpoints
 
-# Theory
-*.png
 
 # Optional: ignore theory images if not needed
 theory/
